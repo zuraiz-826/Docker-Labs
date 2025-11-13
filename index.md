@@ -1,259 +1,338 @@
-Lab 1: Introduction to Docker - What is Docker?
+Lab 2: Understanding Docker Images
 Lab Objectives
 By the end of this lab, students will be able to:
 
-Understand what Docker is and its core concepts
-Differentiate between Docker containers and images
-Install Docker on a Linux environment
-Execute basic Docker commands using the Docker CLI
-Run their first Docker container
-Explain the key differences between containers and virtual machines
-Navigate the Docker ecosystem with confidence
+Understand the concept of Docker images and their role in containerization
+Navigate and search Docker Hub for available images
+Pull Docker images from Docker Hub to their local machine
+List, inspect, and manage Docker images on their system
+Remove unused Docker images to manage storage space
+Use specific image tags when running containers
+Examine the layered architecture of Docker images
+Apply best practices for Docker image management
 Prerequisites
 Before starting this lab, students should have:
 
-Basic familiarity with Linux command line interface
-Understanding of fundamental computing concepts
-No prior Docker experience required - this is a beginner-friendly lab
+Basic understanding of command-line interface (CLI) operations
+Completion of Lab 1 or equivalent Docker installation knowledge
+Familiarity with basic Linux commands
+Understanding of what containers are conceptually
 Lab Environment Setup
-Good News! Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Simply click Start Lab and you'll have access to a fully configured Ubuntu environment with internet connectivity. No need to build your own virtual machine or worry about system compatibility issues.
+Good News: Al Nafi provides ready-to-use Linux-based cloud machines with Docker pre-installed. Simply click Start Lab to access your environment - no need to build your own virtual machine or install Docker manually.
 
 Your cloud machine will include:
 
-Ubuntu 20.04 LTS or newer
+Ubuntu Linux operating system
+Docker Engine pre-installed and configured
 Terminal access with sudo privileges
-Internet connectivity for downloading Docker
-Task 1: Install Docker on Linux Environment
-Subtask 1.1: Update System Packages
-First, let's ensure your system is up to date with the latest packages.
+Internet connectivity for downloading images
+Task 1: Exploring Docker Hub
+Subtask 1.1: Understanding Docker Hub
+Docker Hub is the world's largest repository of container images. Think of it as an app store for Docker images where developers share pre-built applications and operating systems.
 
-sudo apt update
-sudo apt upgrade -y
-What's happening here?
+Step 1: Open your web browser and navigate to Docker Hub
 
-apt update refreshes the package list from repositories
-apt upgrade -y installs available updates automatically
-Subtask 1.2: Install Required Dependencies
-Install packages that allow apt to use repositories over HTTPS:
+https://hub.docker.com
+Step 2: Explore the interface without logging in
 
-sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
-Subtask 1.3: Add Docker's Official GPG Key
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-Subtask 1.4: Set Up Docker Repository
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-Subtask 1.5: Install Docker Engine
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io
-Subtask 1.6: Verify Docker Installation
-Check if Docker is installed and running:
+Notice the search bar at the top
+Observe the featured repositories
+Look at the categories of available images
+Subtask 1.2: Searching for Images via Web Interface
+Step 1: Search for popular images using the web interface
 
-sudo systemctl status docker
-You should see output indicating that Docker is active (running).
+Search for ubuntu in the search bar
+Click on the official Ubuntu repository
+Examine the repository details:
+Description and documentation
+Available tags (versions)
+Pull command
+Number of downloads
+Step 2: Explore other popular images
 
-Subtask 1.7: Add User to Docker Group
-To run Docker commands without sudo, add your user to the docker group:
+Search for nginx (web server)
+Search for mysql (database)
+Search for python (programming language)
+Subtask 1.3: Searching for Images via Command Line
+Step 1: Open your terminal in the cloud machine
 
-sudo usermod -aG docker $USER
-Important: Log out and log back in for this change to take effect, or run:
+Step 2: Search for images using Docker CLI
 
-newgrp docker
-Subtask 1.8: Test Docker Installation
-docker --version
-You should see output similar to:
+docker search ubuntu
+Step 3: Understand the output columns
 
-Docker version 24.0.x, build xxxxxxx
-Task 2: Learn About Docker Containers and Images
-Subtask 2.1: Understanding Docker Images
-Docker Images are like blueprints or templates. Think of them as:
+NAME: Repository name
+DESCRIPTION: Brief description of the image
+STARS: Community rating (like GitHub stars)
+OFFICIAL: Whether it's an official image
+AUTOMATED: Whether it's automatically built
+Step 4: Search for other images
 
-A recipe for creating containers
-Read-only templates containing application code, libraries, and dependencies
-Stored in layers for efficiency
-Subtask 2.2: Understanding Docker Containers
-Docker Containers are running instances of images. Think of them as:
+docker search nginx
+docker search --limit 5 python
+Task 2: Pulling Docker Images
+Subtask 2.1: Understanding Image Tags
+Docker images use tags to specify versions. The latest tag refers to the most recent version, but it's better to use specific version tags for production environments.
 
-A running application created from an image
-Isolated processes with their own file system
-Lightweight and portable across different environments
-Subtask 2.3: The Relationship Between Images and Containers
-Analogy: If a Docker image is like a cookie cutter, then containers are the actual cookies made from that cutter. You can make many cookies (containers) from one cookie cutter (image).
+Subtask 2.2: Pulling the Ubuntu Image
+Step 1: Pull the latest Ubuntu image
 
-Task 3: Run Your First Container
-Subtask 3.1: Execute the Hello World Container
-Let's run the classic first Docker command:
+docker pull ubuntu
+Step 2: Observe the download process
 
-docker run hello-world
-What happens when you run this command?
+Notice the different layers being downloaded
+Each layer represents a filesystem change
+Layers are cached for efficiency
+Step 3: Pull a specific Ubuntu version
 
-Docker looks for the hello-world image locally
-If not found, it downloads the image from Docker Hub
-Creates a new container from the image
-Runs the container
-The container displays a welcome message and exits
-Subtask 3.2: Analyze the Output
-You should see output similar to:
+docker pull ubuntu:20.04
+Step 4: Pull another specific version
 
-Hello from Docker!
-This message shows that your installation appears to be working correctly.
+docker pull ubuntu:22.04
+Subtask 2.3: Pulling Other Popular Images
+Step 1: Pull an Nginx web server image
 
-To generate this message, Docker took the following steps:
- 1. The Docker client contacted the Docker daemon.
- 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
- 3. The Docker daemon created a new container from that image which runs the
-    executable that produces the output you are currently reading.
- 4. The Docker daemon streamed that output to the Docker client, which sent it
-    to your terminal.
-Congratulations! You've successfully run your first Docker container.
+docker pull nginx:alpine
+Step 2: Pull a Python runtime image
 
-Task 4: Understand Container vs Virtual Machine Differences
-Subtask 4.1: Key Differences Overview
-Aspect	Virtual Machines	Docker Containers
-Resource Usage	Heavy (GB of RAM)	Lightweight (MB of RAM)
-Startup Time	Minutes	Seconds
-Isolation	Complete OS isolation	Process-level isolation
-Portability	Limited	Highly portable
-Host OS	Runs multiple full OS	Shares host OS kernel
-Subtask 4.2: Visual Understanding
-Virtual Machines:
+docker pull python:3.9-slim
+Step 3: Understanding why we chose specific tags
 
-Each VM includes a full operating system
-Hypervisor manages multiple VMs
-Higher resource overhead
-Docker Containers:
+alpine: Smaller, security-focused Linux distribution
+slim: Reduced size version with fewer packages
+3.9: Specific Python version for consistency
+Task 3: Managing Docker Images
+Subtask 3.1: Listing Docker Images
+Step 1: List all images on your system
 
-Share the host OS kernel
-Docker Engine manages containers
-Minimal resource overhead
-Subtask 4.3: When to Use Each
-Use Virtual Machines when:
-
-You need complete isolation
-Running different operating systems
-Legacy applications requiring specific OS versions
-Use Docker Containers when:
-
-You want fast deployment
-Microservices architecture
-Development environment consistency
-CI/CD pipelines
-Task 5: Explore Docker CLI and Basic Commands
-Subtask 5.1: List Running Containers
-docker ps
-This shows currently running containers. Since hello-world exited immediately, you'll likely see an empty list.
-
-Subtask 5.2: List All Containers (Including Stopped)
-docker ps -a
-Now you should see the hello-world container with status "Exited".
-
-Subtask 5.3: List Docker Images
 docker images
-This displays all images stored locally on your system. You should see the hello-world image.
+Step 2: Understand the output columns
 
-Subtask 5.4: Get Detailed Information About Docker
-docker info
-This provides comprehensive information about your Docker installation.
+REPOSITORY: Image name
+TAG: Version or variant
+IMAGE ID: Unique identifier (first 12 characters)
+CREATED: When the image was built
+SIZE: Disk space used
+Step 3: List images with additional formatting
 
-Subtask 5.5: Run an Interactive Container
-Let's run a more interactive container:
+docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+Subtask 3.2: Filtering and Sorting Images
+Step 1: Filter images by repository name
 
-docker run -it ubuntu:latest /bin/bash
-Command breakdown:
+docker images ubuntu
+Step 2: Show only image IDs
 
--i: Interactive mode
--t: Allocate a pseudo-TTY
-ubuntu:latest: Use the latest Ubuntu image
-/bin/bash: Run bash shell
-You're now inside a Ubuntu container! Try some commands:
+docker images -q
+Step 3: Show all images including intermediate layers
 
-ls
-pwd
+docker images -a
+Subtask 3.3: Removing Docker Images
+Step 1: Remove a specific image by name and tag
+
+docker rmi ubuntu:20.04
+Step 2: Remove an image by IMAGE ID
+
+# First, get the IMAGE ID
+docker images python:3.9-slim
+
+# Then remove using the ID (use first few characters)
+docker rmi [IMAGE_ID]
+Step 3: Force remove an image (if containers are using it)
+
+docker rmi -f nginx:alpine
+Step 4: Remove multiple images at once
+
+docker rmi ubuntu:22.04 python:3.9-slim
+Step 5: Remove all unused images
+
+docker image prune
+Step 6: Remove all images (use with caution)
+
+docker rmi $(docker images -q)
+Task 4: Working with Image Tags
+Subtask 4.1: Understanding Tag Importance
+Tags help you:
+
+Specify exact versions for reproducibility
+Choose optimized variants (alpine, slim)
+Avoid unexpected changes from latest tag updates
+Subtask 4.2: Running Containers with Specific Tags
+Step 1: Pull multiple versions of the same image
+
+docker pull ubuntu:18.04
+docker pull ubuntu:20.04
+docker pull ubuntu:22.04
+Step 2: Run containers with different Ubuntu versions
+
+# Run Ubuntu 18.04
+docker run -it ubuntu:18.04 /bin/bash
+Step 3: Check the Ubuntu version inside the container
+
 cat /etc/os-release
-To exit the container:
-
 exit
-Subtask 5.6: Run a Container in Background
-docker run -d --name my-nginx nginx:latest
-Command breakdown:
+Step 4: Run Ubuntu 22.04 and compare
 
--d: Run in detached mode (background)
---name my-nginx: Give the container a custom name
-nginx:latest: Use the latest Nginx web server image
-Subtask 5.7: Check Running Containers Again
-docker ps
-You should now see the Nginx container running.
+docker run -it ubuntu:22.04 /bin/bash
+cat /etc/os-release
+exit
+Subtask 4.3: Creating Custom Tags
+Step 1: Tag an existing image with a custom name
 
-Subtask 5.8: Stop a Running Container
-docker stop my-nginx
-Subtask 5.9: Remove a Container
-docker rm my-nginx
-Subtask 5.10: Remove an Image
-docker rmi hello-world
-Note: You can only remove images that aren't being used by any containers.
+docker tag ubuntu:22.04 my-ubuntu:production
+Step 2: Verify the new tag was created
 
-Essential Docker Commands Summary
-Here's a quick reference of the commands you've learned:
+docker images | grep my-ubuntu
+Step 3: Both tags point to the same image (same IMAGE ID)
 
-Command	Purpose
-docker run <image>	Create and run a new container
-docker ps	List running containers
-docker ps -a	List all containers
-docker images	List local images
-docker stop <container>	Stop a running container
-docker rm <container>	Remove a container
-docker rmi <image>	Remove an image
-docker info	Display system information
+docker images ubuntu:22.04
+docker images my-ubuntu:production
+Task 5: Inspecting Docker Image Layers
+Subtask 5.1: Understanding Docker Image Layers
+Docker images are built in layers, like a stack of transparent sheets. Each layer represents a change to the filesystem. This layered approach enables:
+
+Efficiency: Shared layers between images
+Caching: Faster builds and pulls
+Storage optimization: Reduced disk usage
+Subtask 5.2: Inspecting Image Details
+Step 1: Get detailed information about an image
+
+docker inspect ubuntu:22.04
+Step 2: Extract specific information using formatting
+
+# Get just the architecture
+docker inspect --format='{{.Architecture}}' ubuntu:22.04
+
+# Get the creation date
+docker inspect --format='{{.Created}}' ubuntu:22.04
+
+# Get the size
+docker inspect --format='{{.Size}}' ubuntu:22.04
+Subtask 5.3: Viewing Image History and Layers
+Step 1: View the build history of an image
+
+docker history ubuntu:22.04
+Step 2: Understand the history output
+
+IMAGE: Layer ID
+CREATED: When the layer was created
+CREATED BY: Command that created the layer
+SIZE: Size added by this layer
+COMMENT: Additional information
+Step 3: View history without truncation
+
+docker history --no-trunc ubuntu:22.04
+Step 4: Compare histories of different images
+
+docker history nginx:alpine
+docker history python:3.9-slim
+Subtask 5.4: Analyzing Layer Efficiency
+Step 1: Pull a larger image to see more layers
+
+docker pull node:16
+Step 2: Compare the layer structure
+
+docker history node:16
+docker history ubuntu:22.04
+Step 3: Notice how Node.js image builds upon base layers
+
+Base operating system layers
+Package manager updates
+Node.js installation layers
+Configuration layers
+Task 6: Best Practices and Cleanup
+Subtask 6.1: Image Management Best Practices
+Key Principles:
+
+Use specific tags instead of latest for production
+Regularly clean up unused images
+Choose minimal base images (alpine, slim) when possible
+Understand the layers you're adding to images
+Subtask 6.2: System Cleanup
+Step 1: Check current disk usage
+
+docker system df
+Step 2: Clean up unused images
+
+docker image prune
+Step 3: Clean up everything unused (images, containers, networks)
+
+docker system prune
+Step 4: Aggressive cleanup (remove all unused images, not just dangling ones)
+
+docker system prune -a
+Subtask 6.3: Monitoring Image Usage
+Step 1: List images sorted by size
+
+docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | sort -k3 -h
+Step 2: Find large images consuming space
+
+docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | head -10
 Troubleshooting Common Issues
 Issue 1: Permission Denied
-Problem: Getting permission denied errors when running Docker commands.
+Problem: Getting permission denied when running Docker commands Solution:
 
-Solution:
-
+sudo docker [command]
+# Or add user to docker group (requires logout/login)
 sudo usermod -aG docker $USER
-newgrp docker
-Issue 2: Docker Daemon Not Running
-Problem: Error message about Docker daemon not running.
+Issue 2: Image Pull Fails
+Problem: Network issues or repository not found Solution:
 
-Solution:
+# Check internet connectivity
+ping docker.io
 
-sudo systemctl start docker
-sudo systemctl enable docker
-Issue 3: Image Download Fails
-Problem: Cannot download images from Docker Hub.
+# Verify image name spelling
+docker search [image-name]
+Issue 3: Cannot Remove Image
+Problem: Image is being used by a container Solution:
 
-Solution: Check internet connectivity and try again:
+# List containers using the image
+docker ps -a
 
-ping google.com
-docker run hello-world
-Lab Conclusion
-Congratulations! You have successfully completed your introduction to Docker. Here's what you accomplished:
+# Remove containers first, then image
+docker rm [container-id]
+docker rmi [image-name]
+Issue 4: Disk Space Issues
+Problem: Running out of disk space Solution:
 
-Key Achievements
-Installed Docker on a Linux environment using official repositories
-Learned fundamental concepts of containers and images
-Ran your first container using the hello-world image
-Understood the differences between containers and virtual machines
-Mastered basic Docker CLI commands for managing containers and images
-Why This Matters
-Docker has revolutionized how applications are developed, shipped, and deployed. The skills you've learned today form the foundation for:
+# Check Docker disk usage
+docker system df
 
-Modern DevOps practices
-Microservices architecture
-Cloud-native development
-Consistent development environments
-Efficient application deployment
-Next Steps
-Now that you understand Docker basics, you're ready to:
+# Clean up aggressively
+docker system prune -a --volumes
+Lab Verification
+To verify you've completed the lab successfully, run these commands:
 
-Explore creating custom Docker images
-Learn about Docker Compose for multi-container applications
-Understand Docker networking and volumes
-Practice with real-world application containerization
-Certification Path
-This lab aligns with the Docker Certified Associate (DCA) certification objectives, specifically:
+# Should show multiple images
+docker images
 
-Domain 1: Orchestration (25% of exam)
-Domain 2: Image Creation, Management, and Registry (20% of exam)
-Domain 6: Storage and Volumes (10% of exam)
-Keep practicing these fundamental concepts as they are essential building blocks for advanced Docker topics and professional certification success.
+# Should show image details
+docker inspect ubuntu:latest
 
-Well done on completing your first Docker lab! You're now part of the containerization revolution that's transforming modern software development
+# Should show layer history
+docker history ubuntu:latest
+
+# Should show system usage
+docker system df
+Conclusion
+Congratulations! You have successfully completed Lab 2: Understanding Docker Images. In this lab, you have accomplished the following:
+
+Key Achievements:
+
+Explored Docker Hub: You learned how to search for and evaluate Docker images both through the web interface and command line
+Mastered Image Management: You can now pull, list, tag, and remove Docker images efficiently
+Understood Image Layers: You gained insight into Docker's layered architecture and how it optimizes storage and performance
+Applied Best Practices: You learned how to use specific tags, manage disk space, and maintain a clean Docker environment
+Why This Matters: Docker images are the foundation of containerization. Understanding how to work with images effectively is crucial because:
+
+Consistency: Using specific image tags ensures your applications run the same way across different environments
+Efficiency: Understanding layers helps you optimize image sizes and build times
+Security: Knowing how to manage and update images helps maintain secure deployments
+Resource Management: Proper image cleanup prevents disk space issues in production environments
+Next Steps: With this foundation in Docker images, you're now ready to:
+
+Create your own custom Docker images using Dockerfiles
+Build multi-stage images for optimized production deployments
+Implement image scanning and security practices
+Work with private image registries
+The skills you've learned in this lab are directly applicable to the Docker Certified Associate (DCA) certification and real-world container deployments. You now have the knowledge to make informed decisions about image selection, management, and optimization in your containerization journey.
+
