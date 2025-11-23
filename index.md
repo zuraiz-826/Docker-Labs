@@ -1,69 +1,88 @@
-Lab Name: Bind Mounts vs. Named Volumes
-Objectives
+Lab Name: 17. Docker Compose for a Web + DB Stack
+Objectives:
 
-Understand the differences between bind mounts and named volumes in Docker.
-Learn how to create and use bind mounts.
-Learn how to create and use named volumes.
-Identify scenarios where each storage type is most appropriate.
-Prerequisites
+Understand the basics of Docker Compose.
+Learn how to define multiple services in a docker-compose.yml file.
+Deploy a simple web application connected to a database.
+Prerequisites:
 
-Basic understanding of Docker.
-Docker installed on your system.
-Access to a terminal or command line interface.
+Basic knowledge of Docker and containerization.
+Docker and Docker Compose installed on your machine.
 Lab Tasks
+Task 1: Creating the Docker Compose File
+Initialize the Lab Environment
 
-Introduction to Storage in Docker
+Ensure Docker is installed by running the following command:
+docker --version
+Check Docker Compose installation:
+docker-compose --version
+Set Up the Project Directory
 
-Docker provides two main ways to persist data: bind mounts and named volumes.
-Bind mounts link a directory on the host to a directory in the container, while named volumes are managed by Docker and stored in a special location.
-Create and Use a Bind Mount
+Create a new directory for the lab and navigate into it:
+mkdir web-db-stack && cd web-db-stack
+Create the docker-compose.yml File
 
-Task 1.1: Run a Container with a Bind Mount
+Using a text editor, create a docker-compose.yml file in the current directory:
+touch docker-compose.yml
+Define Services in docker-compose.yml
 
-Create a directory on your host to be mounted:
+Open the docker-compose.yml file and add the following content:
 
-mkdir ~/host-directory
-echo "Hello from the host!" > ~/host-directory/host-file.txt
-Run a Nginx container with the bind mount:
+version: '3.8'
 
-docker run -d --name nginx-bind -v ~/host-directory:/usr/share/nginx/html:ro -p 8080:80 nginx
-Task 1.2: Verify the Bind Mount
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - db
 
-Access the running container’s bind mount:
-curl http://localhost:8080/host-file.txt
-You should see the contents of host-file.txt.
-Create and Use a Named Volume
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: examplepassword
+      MYSQL_DATABASE: exampledb
+    volumes:
+      - db_data:/var/lib/mysql
 
-Task 2.1: Create a Named Volume
+volumes:
+  db_data:
+Key Concepts:
 
-Create a named volume:
-docker volume create my-volume
-Task 2.2: Run a Container Using a Named Volume
+Services: Define networked applications with web and db as services.
+Volumes: Allow data persistence with db_data for the MySQL data directory.
+Task 2: Running Docker Compose
+Bring Up Services
 
-Use the named volume with a container:
+In the terminal, run the following command to start the services:
+docker-compose up -d
+Verify Services
 
-docker run -d --name nginx-volume -v my-volume:/usr/share/nginx/html -p 8081:80 nginx
-Copy a file into the volume:
+List running containers to verify both services are up:
 
-docker cp ~/host-directory/host-file.txt nginx-volume:/usr/share/nginx/html/
-Task 2.3: Verify the Named Volume
+docker-compose ps
+Access the web service by opening a browser and navigating to http://localhost.
 
-Access the running container’s volume:
-curl http://localhost:8081/host-file.txt
-You should see the contents of host-file.txt again.
-Comparison and Use Cases
+Testing Database Connection
 
-Bind Mounts:
+Access the MySQL container:
 
-Key Concept: Useful for sharing data between the host and container. Changes on the host are immediately reflected in the container.
-Example Use Case: Development environments where code needs frequent updates.
-Named Volumes:
+docker-compose exec db mysql -u root -p
+Enter the password examplepassword.
 
-Key Concept: Managed by Docker, isolated from the host. Ensures data integrity despite host changes.
-Example Use Case: Storing persistent data in production where host changes should not affect the data.
+Verify the database:
+
+SHOW DATABASES;
+Stop and Clean Up Services
+
+Stop the services:
+docker-compose down
 Conclusion
+In this lab, you have successfully:
 
-In this lab, you learned the differences between bind mounts and named volumes, how to set them up, and the best scenarios for their use. Bind mounts offer flexibility and immediate reflection of the host states, useful for development. Named volumes provide a hands-off management approach suitable for production environments where data persistency and stability are crucial.
-
-By following this lab, you can now decide on the appropriate storage mechanism based on your project's needs, optimizing both development speed and data security according to your project's requirements.
+Created a docker-compose.yml file to define a web and a database service.
+Used Docker Compose to manage and orchestrate these services.
+Verified the functionality and connectivity between the web and DB containers.
+This lab illustrated the power of Docker Compose in managing multi-container Docker applications, streamlining operations, and configuration. By utilizing volumes and environmental variables, you ensure data persistence and security within containerized applications.
 
