@@ -1,507 +1,970 @@
-Lab 8: Building and Managing Docker Images
-Objectives
-By the end of this lab, you will be able to:
+# Lab 20: Docker for AI/ML Workloads
 
-Optimize Docker images by reducing image layers and size
-Use .dockerignore files to exclude unnecessary files from build context
-Build custom Docker images with proper tagging strategies
-Push Docker images to Docker Hub registry
-Pull and run Docker images on different machines
-Understand best practices for Docker image management
-Prerequisites
-Before starting this lab, you should have:
+## 📋 Learning Objectives
 
-Basic understanding of Docker concepts (containers, images)
-Familiarity with Linux command line operations
-Basic knowledge of text editors (nano, vim, or similar)
-Understanding of web applications (HTML, basic programming concepts)
-Note: Al Nafi provides ready-to-use Linux-based cloud machines with Docker pre-installed. Simply click "Start Lab" to begin - no need to build your own VM or install Docker manually.
+By the end of this lab, students will be able to:
 
-Lab Environment Setup
-Your Al Nafi cloud machine comes with:
+- ✅ Install and configure Docker on a Linux system for AI/ML workloads
+- ✅ Create and manage Docker containers for Python-based machine learning environments
+- ✅ Build custom Docker images optimized for TensorFlow and Jupyter Notebooks
+- ✅ Develop a complete Docker image for training AI models with sample datasets
+- ✅ Deploy distributed machine learning jobs using Docker Compose
+- ✅ Understand best practices for containerizing AI/ML workflows
+- ✅ Troubleshoot common issues in containerized ML environments
 
-Ubuntu Linux operating system
-Docker Engine pre-installed and configured
-Text editors (nano, vim)
-Internet connectivity for Docker Hub access
-Task 1: Optimize Docker Images by Reducing Image Layers
-Understanding Docker Layers
-Docker images are built in layers. Each instruction in a Dockerfile creates a new layer. Fewer layers generally mean smaller, more efficient images.
+---
 
-Subtask 1.1: Create a Non-Optimized Dockerfile
-First, let's create a simple web application and a non-optimized Dockerfile to understand the problem.
+## 🎯 Prerequisites
 
-Create a project directory:
-mkdir docker-optimization-lab
-cd docker-optimization-lab
-Create a simple HTML file:
-cat > index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Docker Optimization Lab</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        h1 { color: #2c3e50; }
-        .info { background: #ecf0f1; padding: 20px; border-radius: 5px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Welcome to Docker Optimization Lab</h1>
-        <div class="info">
-            <p>This is a sample web application running in a Docker container.</p>
-            <p>Image optimization techniques help reduce size and improve performance.</p>
-        </div>
-    </div>
-</body>
-</html>
-EOF
-Create a non-optimized Dockerfile:
-cat > Dockerfile.unoptimized << 'EOF'
-FROM ubuntu:20.04
+Before starting this lab, students should have:
 
-# Update package list
-RUN apt-get update
+- Basic understanding of Linux command line operations
+- Familiarity with Python programming fundamentals
+- Basic knowledge of machine learning concepts
+- Understanding of containerization principles
+- Experience with text editors (nano, vim, or similar)
 
-# Install nginx
-RUN apt-get install -y nginx
+> **Note:** Al Nafi provides Linux-based cloud machines for this lab. Simply click "Start Lab" to access your dedicated Linux environment. The provided machine is bare metal with no pre-installed tools, so you will install all required software during the lab exercises.
 
-# Install curl for testing
-RUN apt-get install -y curl
+---
 
-# Install vim for editing
-RUN apt-get install -y vim
+## 🚀 Lab Environment Setup
 
-# Clean package cache
-RUN apt-get clean
+### Task 1: Install Docker and Required Dependencies
 
-# Remove default nginx page
-RUN rm /var/www/html/index.nginx-debian.html
+#### Subtask 1.1: Update System and Install Docker
 
-# Copy our HTML file
-COPY index.html /var/www/html/
+First, update your system and install Docker:
 
-# Expose port 80
-EXPOSE 80
+```bash
+# Update package index
+sudo apt update
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
-EOF
-Build the non-optimized image:
-docker build -f Dockerfile.unoptimized -t webapp-unoptimized:v1 .
-Check the image size:
-docker images webapp-unoptimized:v1
-Subtask 1.2: Create an Optimized Dockerfile
-Now let's create an optimized version that combines multiple RUN commands and uses a smaller base image.
+# Install required packages
+sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
 
-Create an optimized Dockerfile:
-cat > Dockerfile.optimized << 'EOF'
-FROM nginx:alpine
+# Add Docker's official GPG key
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
-# Copy our HTML file
-COPY index.html /usr/share/nginx/html/
+# Add Docker repository
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Expose port 80
-EXPOSE 80
+# Update package index again
+sudo apt update
 
-# nginx:alpine already has the correct CMD
-EOF
-Build the optimized image:
-docker build -f Dockerfile.optimized -t webapp-optimized:v1 .
-Compare image sizes:
-docker images | grep webapp
-Subtask 1.3: Advanced Optimization with Multi-Stage Build
-For more complex applications, let's create a multi-stage build example.
+# Install Docker Engine
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-Create a simple Node.js application:
-cat > package.json << 'EOF'
-{
-  "name": "docker-optimization-demo",
-  "version": "1.0.0",
-  "description": "Demo app for Docker optimization",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.0"
-  }
-}
-EOF
-Create a simple Express server:
-cat > server.js << 'EOF'
-const express = require('express');
-const path = require('path');
-const app = express();
-const PORT = 3000;
+# Add current user to docker group
+sudo usermod -aG docker $USER
 
-// Serve static files
-app.use(express.static('.'));
+# Start and enable Docker service
+sudo systemctl start docker
+sudo systemctl enable docker
+```
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+#### Subtask 1.2: Verify Docker Installation
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-EOF
-Create a multi-stage Dockerfile:
-cat > Dockerfile.multistage << 'EOF'
-# Build stage
-FROM node:16-alpine AS builder
+```bash
+# Check Docker version
+docker --version
 
+# Test Docker installation
+docker run hello-world
+
+# Check Docker Compose version
+docker compose version
+```
+
+#### Subtask 1.3: Install Additional Tools
+
+```bash
+# Install Python and pip for local development
+sudo apt install -y python3 python3-pip git wget
+
+# Install Docker Compose (standalone version for compatibility)
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+---
+
+### Task 2: Create Docker Containers for Python, TensorFlow, and Jupyter Notebooks
+
+#### Subtask 2.1: Create a Basic Python ML Container
+
+Create a directory structure for your ML project:
+
+```bash
+# Create project directory
+mkdir -p ~/ml-docker-lab
+cd ~/ml-docker-lab
+
+# Create subdirectories
+mkdir -p python-ml tensorflow-ml jupyter-ml distributed-ml
+```
+
+Create a Dockerfile for a basic Python ML environment:
+
+```dockerfile
+# ~/ml-docker-lab/python-ml/Dockerfile
+FROM python:3.9-slim
+
+# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-RUN npm install --only=production
-
-# Production stage
-FROM node:16-alpine AS production
-
-WORKDIR /app
-
-# Copy only necessary files from builder stage
-COPY --from=builder /app/node_modules ./node_modules
-COPY package*.json ./
-COPY server.js ./
-COPY index.html ./
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-USER nodejs
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
-EOF
-Build the multi-stage image:
-docker build -f Dockerfile.multistage -t webapp-multistage:v1 .
-Compare all image sizes:
-docker images | grep webapp
-Task 2: Use .dockerignore to Exclude Unnecessary Files
-Understanding .dockerignore
-The .dockerignore file works similarly to .gitignore, excluding files and directories from the Docker build context.
-
-Subtask 2.1: Create Files to Demonstrate .dockerignore
-Create various file types in your project:
-# Create some log files
-mkdir logs
-echo "Error log content" > logs/error.log
-echo "Access log content" > logs/access.log
-
-# Create temporary files
-echo "Temporary data" > temp.txt
-echo "Cache data" > cache.tmp
-
-# Create development files
-mkdir .git
-echo "Git repository data" > .git/config
-
-# Create documentation
-mkdir docs
-echo "# Documentation" > docs/README.md
-
-# Create node_modules simulation
-mkdir node_modules_dev
-echo "Development dependencies" > node_modules_dev/dev-package.js
-Build without .dockerignore to see the problem:
-docker build -f Dockerfile.optimized -t webapp-with-junk:v1 .
-Subtask 2.2: Create and Use .dockerignore
-Create a comprehensive .dockerignore file:
-cat > .dockerignore << 'EOF'
-# Logs
-logs/
-*.log
-
-# Temporary files
-*.tmp
-temp.txt
-
-# Version control
-.git/
-.gitignore
-
-# Development dependencies
-node_modules_dev/
-
-# Documentation (not needed in production)
-docs/
-README.md
-
-# IDE files
-.vscode/
-.idea/
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Docker files (don't include other Dockerfiles)
-Dockerfile.*
-!Dockerfile.optimized
-
-# Build artifacts
-dist/
-build/
-EOF
-Build the image with .dockerignore:
-docker build -f Dockerfile.optimized -t webapp-clean:v1 .
-Verify the build context is smaller:
-# Check what files are in the image
-docker run --rm webapp-clean:v1 ls -la /usr/share/nginx/html/
-Task 3: Build a Custom Image and Tag It Appropriately
-Understanding Docker Tagging
-Proper tagging helps organize and version your Docker images effectively.
-
-Subtask 3.1: Learn Tagging Best Practices
-Create a final optimized Dockerfile:
-cat > Dockerfile << 'EOF'
-FROM nginx:alpine
-
-# Add metadata labels
-LABEL maintainer="your-email@example.com"
-LABEL version="1.0"
-LABEL description="Optimized web application for Docker lab"
+# Install Python ML libraries
+RUN pip install --no-cache-dir \
+    numpy==1.24.3 \
+    pandas==2.0.3 \
+    scikit-learn==1.3.0 \
+    matplotlib==3.7.2 \
+    seaborn==0.12.2
 
 # Copy application files
-COPY index.html /usr/share/nginx/html/
+COPY . /app
 
-# Create custom nginx configuration
-RUN echo 'server { \
-    listen 80; \
-    server_name localhost; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html; \
-    } \
-    # Security headers \
-    add_header X-Frame-Options "SAMEORIGIN" always; \
-    add_header X-Content-Type-Options "nosniff" always; \
-}' > /etc/nginx/conf.d/default.conf
+# Set default command
+CMD ["python3"]
+```
 
-EXPOSE 80
+Create a sample Python ML script:
 
-CMD ["nginx", "-g", "daemon off;"]
-EOF
-Subtask 3.2: Build with Multiple Tags
-Build with semantic versioning:
-# Build with version tag
-docker build -t mywebapp:1.0.0 .
+```python
+# ~/ml-docker-lab/python-ml/ml_example.py
+import numpy as np
+import pandas as pd
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import matplotlib.pyplot as plt
 
-# Tag the same image with different tags
-docker tag mywebapp:1.0.0 mywebapp:1.0
-docker tag mywebapp:1.0.0 mywebapp:latest
-docker tag mywebapp:1.0.0 mywebapp:stable
-View all tags:
-docker images mywebapp
-Subtask 3.3: Build with Environment-Specific Tags
-Create environment-specific tags:
-# Development version
-docker tag mywebapp:1.0.0 mywebapp:dev
+def create_sample_dataset():
+    """Create a sample classification dataset"""
+    X, y = make_classification(
+        n_samples=1000,
+        n_features=20,
+        n_informative=10,
+        n_redundant=10,
+        n_clusters_per_class=1,
+        random_state=42
+    )
+    return X, y
 
-# Staging version
-docker tag mywebapp:1.0.0 mywebapp:staging
+def train_model():
+    """Train a simple ML model"""
+    print("Creating sample dataset...")
+    X, y = create_sample_dataset()
+    
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+    
+    print("Training Random Forest model...")
+    # Train model
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    
+    # Make predictions
+    y_pred = model.predict(X_test)
+    
+    # Calculate accuracy
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Model Accuracy: {accuracy:.4f}")
+    
+    # Print classification report
+    print("\nClassification Report:")
+    print(classification_report(y_test, y_pred))
+    
+    return model, accuracy
 
-# Production version
-docker tag mywebapp:1.0.0 mywebapp:prod
-Test the image locally:
+if __name__ == "__main__":
+    print("Python ML Container - Sample Classification Task")
+    print("=" * 50)
+    model, accuracy = train_model()
+    print(f"\nTraining completed successfully!")
+    print(f"Final accuracy: {accuracy:.4f}")
+```
+
+Build and run the Python ML container:
+
+```bash
+# Navigate to the directory
+cd ~/ml-docker-lab/python-ml
+
+# Build the Docker image
+docker build -t python-ml:latest .
+
 # Run the container
-docker run -d -p 8080:80 --name webapp-test mywebapp:latest
+docker run --rm python-ml:latest python ml_example.py
+```
 
-# Test the application
-curl http://localhost:8080
+#### Subtask 2.2: Create a TensorFlow Container
 
-# Check container logs
-docker logs webapp-test
+Navigate to the TensorFlow directory and create a specialized Dockerfile:
 
-# Stop and remove the test container
-docker stop webapp-test
-docker rm webapp-test
-Task 4: Push the Image to Docker Hub
-Prerequisites for Docker Hub
-You'll need a Docker Hub account. If you don't have one, create it at https://hub.docker.com
+```dockerfile
+# ~/ml-docker-lab/tensorflow-ml/Dockerfile
+FROM tensorflow/tensorflow:2.13.0
 
-Subtask 4.1: Login to Docker Hub
-Login to Docker Hub:
-docker login
-Enter your Docker Hub username and password when prompted.
+# Set working directory
+WORKDIR /app
 
-Subtask 4.2: Tag Image for Docker Hub
-Tag your image with your Docker Hub username:
-# Replace 'yourusername' with your actual Docker Hub username
-docker tag mywebapp:1.0.0 yourusername/mywebapp:1.0.0
-docker tag mywebapp:1.0.0 yourusername/mywebapp:latest
-Subtask 4.3: Push to Docker Hub
-Push the images:
-# Push specific version
-docker push yourusername/mywebapp:1.0.0
+# Install additional Python packages
+RUN pip install --no-cache-dir \
+    numpy==1.24.3 \
+    pandas==2.0.3 \
+    matplotlib==3.7.2 \
+    seaborn==0.12.2 \
+    scikit-learn==1.3.0
 
-# Push latest tag
-docker push yourusername/mywebapp:latest
-Verify the push:
-# Check your repositories
-docker search yourusername/mywebapp
-Subtask 4.4: Add Image Documentation
-Create a README for your Docker Hub repository:
-cat > DOCKER_README.md << 'EOF'
-# MyWebApp Docker Image
+# Copy application files
+COPY . /app
 
-A simple, optimized web application built for Docker demonstration.
+# Set default command
+CMD ["python3"]
+```
 
-## Features
-- Based on nginx:alpine for minimal size
-- Optimized with multi-layer reduction
-- Security headers included
-- Production-ready configuration
+Create a TensorFlow example script:
 
-## Usage
+```python
+# ~/ml-docker-lab/tensorflow-ml/tensorflow_example.py
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_regression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+def create_regression_dataset():
+    """Create a sample regression dataset"""
+    X, y = make_regression(
+        n_samples=1000,
+        n_features=10,
+        noise=0.1,
+        random_state=42
+    )
+    return X, y
+
+def build_neural_network(input_dim):
+    """Build a simple neural network for regression"""
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(64, activation='relu', input_shape=(input_dim,)),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dense(32, activation='relu'),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dense(16, activation='relu'),
+        tf.keras.layers.Dense(1)
+    ])
+    
+    model.compile(
+        optimizer='adam',
+        loss='mse',
+        metrics=['mae']
+    )
+    
+    return model
+
+def train_tensorflow_model():
+    """Train a TensorFlow model"""
+    print("TensorFlow Version:", tf.version.VERSION)
+    print("Creating regression dataset...")
+    
+    # Create dataset
+    X, y = create_regression_dataset()
+    
+    # Split and scale data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+    
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    print("Building neural network...")
+    model = build_neural_network(X_train.shape[1])
+    
+    print("Model Architecture:")
+    model.summary()
+    
+    print("\nTraining model...")
+    history = model.fit(
+        X_train_scaled, y_train,
+        epochs=50,
+        batch_size=32,
+        validation_split=0.2,
+        verbose=1
+    )
+    
+    # Evaluate model
+    test_loss, test_mae = model.evaluate(X_test_scaled, y_test, verbose=0)
+    print(f"\nTest Loss: {test_loss:.4f}")
+    print(f"Test MAE: {test_mae:.4f}")
+    
+    return model, history
+
+if __name__ == "__main__":
+    print("TensorFlow ML Container - Neural Network Regression")
+    print("=" * 55)
+    model, history = train_tensorflow_model()
+    print("\nTensorFlow model training completed successfully!")
+```
+
+Build and run the TensorFlow container:
 
 ```bash
-docker run -d -p 80:80 yourusername/mywebapp:latest
-Tags
-latest - Latest stable version
-1.0.0 - Specific version
-stable - Stable release
-Size
-Approximately 15MB (optimized from 200MB+ unoptimized version) EOF
+# Navigate to the directory
+cd ~/ml-docker-lab/tensorflow-ml
 
+# Build the TensorFlow image
+docker build -t tensorflow-ml:latest .
 
-## Task 5: Pull and Run the Image on a Different Machine
+# Run the container
+docker run --rm tensorflow-ml:latest python tensorflow_example.py
+```
 
-### Simulating a Different Machine
+#### Subtask 2.3: Create a Jupyter Notebook Container
 
-We'll simulate pulling the image on a different machine by removing local images first.
+Navigate to the Jupyter directory:
 
-### Subtask 5.1: Clean Local Environment
+```dockerfile
+# ~/ml-docker-lab/jupyter-ml/Dockerfile
+FROM jupyter/tensorflow-notebook:latest
 
-1. **Remove local images to simulate a fresh machine**:
+# Switch to root user to install packages
+USER root
+
+# Install additional system packages
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch back to jovyan user
+USER jovyan
+
+# Install additional Python packages
+RUN pip install --no-cache-dir \
+    seaborn==0.12.2 \
+    plotly==5.15.0 \
+    scikit-learn==1.3.0 \
+    xgboost==1.7.6
+
+# Create notebooks directory
+RUN mkdir -p /home/jovyan/notebooks
+
+# Copy notebook files
+COPY notebooks/ /home/jovyan/notebooks/
+
+# Set working directory
+WORKDIR /home/jovyan/notebooks
+
+# Expose Jupyter port
+EXPOSE 8888
+
+# Start Jupyter Lab
+CMD ["start-notebook.sh", "--NotebookApp.token=''", "--NotebookApp.password=''"]
+```
+
+Create a notebooks directory and sample notebook:
+
 ```bash
-# Stop any running containers
-docker stop $(docker ps -q) 2>/dev/null || true
+mkdir -p notebooks
+```
 
-# Remove local images (keep the pushed ones on Docker Hub)
-docker rmi mywebapp:1.0.0 mywebapp:latest mywebapp:stable 2>/dev/null || true
-docker rmi yourusername/mywebapp:1.0.0 yourusername/mywebapp:latest 2>/dev/null || true
+Create a sample Jupyter notebook (`notebooks/ml_analysis.ipynb`):
 
-# Verify images are removed
-docker images | grep mywebapp
-Subtask 5.2: Pull from Docker Hub
-Pull the image from Docker Hub:
-# Pull latest version
-docker pull yourusername/mywebapp:latest
+```json
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Machine Learning Analysis in Docker\n",
+    "\n",
+    "This notebook demonstrates ML workflows in a containerized environment."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "import seaborn as sns\n",
+    "from sklearn.datasets import load_iris\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.ensemble import RandomForestClassifier\n",
+    "from sklearn.metrics import classification_report, confusion_matrix\n",
+    "import tensorflow as tf\n",
+    "\n",
+    "print(\"Libraries imported successfully!\")\n",
+    "print(f\"TensorFlow version: {tf.__version__}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load and explore the Iris dataset\n",
+    "iris = load_iris()\n",
+    "df = pd.DataFrame(iris.data, columns=iris.feature_names)\n",
+    "df['target'] = iris.target\n",
+    "df['species'] = df['target'].map({0: 'setosa', 1: 'versicolor', 2: 'virginica'})\n",
+    "\n",
+    "print(\"Dataset shape:\", df.shape)\n",
+    "print(\"\\nFirst 5 rows:\")\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create visualizations\n",
+    "plt.figure(figsize=(12, 8))\n",
+    "\n",
+    "# Pairplot\n",
+    "sns.pairplot(df, hue='species', diag_kind='hist')\n",
+    "plt.suptitle('Iris Dataset - Pairplot', y=1.02)\n",
+    "plt.show()\n",
+    "\n",
+    "# Correlation heatmap\n",
+    "plt.figure(figsize=(8, 6))\n",
+    "correlation_matrix = df.select_dtypes(include=[np.number]).corr()\n",
+    "sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0)\n",
+    "plt.title('Feature Correlation Heatmap')\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Train a Random Forest model\n",
+    "X = iris.data\n",
+    "y = iris.target\n",
+    "\n",
+    "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)\n",
+    "\n",
+    "# Train model\n",
+    "rf_model = RandomForestClassifier(n_estimators=100, random_state=42)\n",
+    "rf_model.fit(X_train, y_train)\n",
+    "\n",
+    "# Make predictions\n",
+    "y_pred = rf_model.predict(X_test)\n",
+    "\n",
+    "# Print results\n",
+    "print(\"Classification Report:\")\n",
+    "print(classification_report(y_test, y_pred, target_names=iris.target_names))\n",
+    "\n",
+    "# Confusion matrix\n",
+    "plt.figure(figsize=(8, 6))\n",
+    "cm = confusion_matrix(y_test, y_pred)\n",
+    "sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', \n",
+    "            xticklabels=iris.target_names, yticklabels=iris.target_names)\n",
+    "plt.title('Confusion Matrix')\n",
+    "plt.ylabel('True Label')\n",
+    "plt.xlabel('Predicted Label')\n",
+    "plt.show()"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.8"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
+```
 
-# Pull specific version
-docker pull yourusername/mywebapp:1.0.0
-Verify the pulled images:
-docker images yourusername/mywebapp
-Subtask 5.3: Run the Pulled Image
-Run the container from pulled image:
-# Run in detached mode
-docker run -d -p 8080:80 --name production-webapp yourusername/mywebapp:latest
-Test the application:
-# Test with curl
-curl http://localhost:8080
+Build and run the Jupyter container:
 
-# Check if HTML content is served correctly
-curl -s http://localhost:8080 | grep "Docker Optimization Lab"
-Monitor the container:
-# Check container status
+```bash
+# Navigate to the directory
+cd ~/ml-docker-lab/jupyter-ml
+
+# Build the Jupyter image
+docker build -t jupyter-ml:latest .
+
+# Run the container with port mapping
+docker run -d --name jupyter-ml-container -p 8888:8888 jupyter-ml:latest
+
+# Check if container is running
 docker ps
 
-# View container logs
-docker logs production-webapp
+# Get the Jupyter URL (if token is needed)
+docker logs jupyter-ml-container
+```
 
-# Check resource usage
-docker stats production-webapp --no-stream
-Subtask 5.4: Advanced Deployment Scenarios
-Run with custom configuration:
-# Run with environment variables
-docker run -d -p 8081:80 \
-  --name webapp-custom \
-  -e NGINX_HOST=localhost \
-  -e NGINX_PORT=80 \
-  yourusername/mywebapp:latest
-Run with volume mounting:
-# Create custom content
-mkdir custom-content
-echo "<h1>Custom Content</h1>" > custom-content/custom.html
+Access Jupyter Lab by opening a web browser and navigating to `http://localhost:8888`.
 
-# Run with volume
-docker run -d -p 8082:80 \
-  --name webapp-volume \
-  -v $(pwd)/custom-content:/usr/share/nginx/html/custom \
-  yourusername/mywebapp:latest
-Test all deployments:
-# Test original deployment
-curl http://localhost:8080
+---
 
-# Test custom deployment
-curl http://localhost:8081
+### Task 3: Build a Docker Image for Training an AI Model
 
-# Test volume deployment
-curl http://localhost:8082/custom/custom.html
-Troubleshooting Common Issues
-Issue 1: Docker Login Problems
-# If login fails, try:
-docker logout
-docker login --username yourusername
-Issue 2: Push Permission Denied
-# Ensure you're pushing to your own repository
-docker tag mywebapp:latest yourusername/mywebapp:latest
-docker push yourusername/mywebapp:latest
-Issue 3: Port Already in Use
-# Find what's using the port
-sudo netstat -tulpn | grep :8080
+#### Subtask 3.1: Create a Comprehensive AI Training Environment
 
-# Use a different port
-docker run -d -p 8090:80 --name webapp-alt yourusername/mywebapp:latest
-Issue 4: Container Won't Start
-# Check container logs
-docker logs container-name
+Navigate to a new directory for the AI training image:
 
-# Run interactively for debugging
-docker run -it yourusername/mywebapp:latest /bin/sh
-Cleanup
-After completing the lab, clean up your environment:
+```bash
+cd ~/ml-docker-lab
+mkdir -p ai-training
+cd ai-training
+```
 
-# Stop all containers
-docker stop $(docker ps -q)
+Create a Dockerfile optimized for AI model training:
 
-# Remove containers
-docker rm $(docker ps -aq)
+```dockerfile
+# ~/ml-docker-lab/ai-training/Dockerfile
+FROM tensorflow/tensorflow:2.13.0-gpu
 
-# Remove images (optional)
-docker rmi $(docker images -q)
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Clean up build cache
-docker system prune -f
-Conclusion
-In this lab, you have successfully:
+# Set working directory
+WORKDIR /app
 
-Optimized Docker images by reducing layers from multiple RUN commands to single commands and using smaller base images (nginx:alpine vs ubuntu:20.04), achieving significant size reduction
-Implemented .dockerignore to exclude unnecessary files like logs, temporary files, and development dependencies from the build context, making builds faster and images cleaner
-Built and tagged custom images using semantic versioning and environment-specific tags, following Docker best practices for image organization
-Pushed images to Docker Hub registry, making them available for distribution and deployment across different environments
-Pulled and ran images on simulated different machines, demonstrating the portability and consistency of containerized applications
-Key Takeaways
-Image optimization can reduce image sizes by 80-90%, improving deployment speed and reducing storage costs
-Proper tagging strategies help manage different versions and environments effectively
-Docker Hub provides a centralized registry for sharing and distributing Docker images
-Container portability ensures applications run consistently across different environments
-.dockerignore is essential for excluding unnecessary files and improving build performance
-Real-World Applications
-These skills are essential for:
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    git \
+    wget \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-DevOps pipelines where optimized images reduce deployment time
-Microservices architecture where image size affects scaling performance
-CI/CD processes where proper tagging enables automated deployments
-Production environments where security and efficiency are paramount
-This knowledge prepares you for the Docker Certified Associate (DCA) certification and real-world container management scenarios.
+# Install Python packages for AI/ML
+RUN pip install --no-cache-dir \
+    numpy==1.24.3 \
+    pandas==2.0.3 \
+    matplotlib==3.7.2 \
+    seaborn==0.12.2 \
+    scikit-learn==1.3.0 \
+    opencv-python==4.8.0.74 \
+    Pillow==10.0.0 \
+    requests==2.31.0 \
+    tqdm==4.65.0 \
+    wandb==0.15.8
+
+# Create directories for data, models, and logs
+RUN mkdir -p /app/data /app/models /app/logs /app/scripts
+
+# Copy training scripts
+COPY scripts/ /app/scripts/
+COPY data/ /app/data/
+
+# Set permissions
+RUN chmod +x /app/scripts/*.py
+
+# Default command
+CMD ["python3", "/app/scripts/train_model.py"]
+```
+
+#### Subtask 3.2: Create Training Scripts
+
+Create the scripts directory and training script:
+
+```bash
+mkdir -p scripts data
+```
+
+Create the main training script (`scripts/train_model.py`):
+
+```python
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
+import argparse
+
+class AIModelTrainer:
+    def __init__(self, config_path=None):
+        self.config = self.load_config(config_path)
+        self.model = None
+        self.history = None
+        self.scaler = StandardScaler()
+        
+    def load_config(self, config_path):
+        """Load training configuration"""
+        default_config = {
+            "model_name": "neural_classifier",
+            "epochs": 50,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "validation_split": 0.2,
+            "random_state": 42,
+            "save_model": True,
+            "save_plots": True
+        }
+        
+        if config_path and os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                user_config = json.load(f)
+                default_config.update(user_config)
+        
+        return default_config
+    
+    def create_synthetic_dataset(self):
+        """Create a synthetic dataset for training"""
+        print("Creating synthetic dataset...")
+        
+        # Generate synthetic data
+        np.random.seed(self.config['random_state'])
+        n_samples = 10000
+        n_features = 20
+        
+        # Create features with different patterns for each class
+        X = np.random.randn(n_samples, n_features)
+        
+        # Create three classes with different characteristics
+        y = np.zeros(n_samples)
+        
+        # Class 0: High values in first 5 features
+        mask_0 = np.random.choice(n_samples, n_samples//3, replace=False)
+        X[mask_0, :5] += 2
+        y[mask_0] = 0
+        
+        # Class 1: High values in middle 5 features
+        remaining = np.setdiff1d(np.arange(n_samples), mask_0)
+        mask_1 = np.random.choice(remaining, len(remaining)//2, replace=False)
+        X[mask_1, 5:10] += 2
+        y[mask_1] = 1
+        
+        # Class 2: High values in last 5 features
+        mask_2 = np.setdiff1d(remaining, mask_1)
+        X[mask_2, 10:15] += 2
+        y[mask_2] = 2
+        
+        return X, y.astype(int)
+    
+    def build_model(self, input_dim, num_classes):
+        """Build neural network model"""
+        print("Building neural network model...")
+        
+        model = keras.Sequential([
+            keras.layers.Dense(128, activation='relu', input_shape=(input_dim,)),
+            keras.layers.BatchNormalization(),
+            keras.layers.Dropout(0.3),
+            
+            keras.layers.Dense(64, activation='relu'),
+            keras.layers.BatchNormalization(),
+            keras.layers.Dropout(0.3),
+            
+            keras.layers.Dense(32, activation='relu'),
+            keras.layers.BatchNormalization(),
+            keras.layers.Dropout(0.2),
+            
+            keras.layers.Dense(num_classes, activation='softmax')
+        ])
+        
+        optimizer = keras.optimizers.Adam(learning_rate=self.config['learning_rate'])
+        
+        model.compile(
+            optimizer=optimizer,
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        return model
+    
+    def train(self):
+        """Train the AI model"""
+        print("Starting AI model training...")
+        print("=" * 50)
+        
+        # Create dataset
+        X, y = self.create_synthetic_dataset()
+        print(f"Dataset shape: {X.shape}")
+        print(f"Number of classes: {len(np.unique(y))}")
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, 
+            test_size=0.2, 
+            random_state=self.config['random_state'],
+            stratify=y
+        )
+        
+        # Scale features
+        X_train_scaled = self.scaler.fit_transform(X_train)
+        X_test_scaled = self.scaler.transform(X_test)
+        
+        # Build model
+        self.model = self.build_model(X_train.shape[1], len(np.unique(y)))
+        
+        print("\nModel Architecture:")
+        self.model.summary()
+        
+        # Define callbacks
+        callbacks = [
+            keras.callbacks.EarlyStopping(
+                monitor='val_loss',
+                patience=10,
+                restore_best_weights=True
+            ),
+            keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.5,
+                patience=5,
+                min_lr=1e-7
+            )
+        ]
+        
+        # Train model
+        print(f"\nTraining for {self.config['epochs']} epochs...")
+        self.history = self.model.fit(
+            X_train_scaled, y_train,
+            epochs=self.config['epochs'],
+            batch_size=self.config['batch_size'],
+            validation_split=self.config['validation_split'],
+            callbacks=callbacks,
+            verbose=1
+        )
+        
+        # Evaluate model
+        print("\nEvaluating model...")
+        test_loss, test_accuracy = self.model.evaluate(X_test_scaled, y_test, verbose=0)
+        print(f"Test Loss: {test_loss:.4f}")
+        print(f"Test Accuracy: {test_accuracy:.4f}")
+        
+        # Generate predictions for detailed analysis
+        y_pred = self.model.predict(X_test_scaled)
+        y_pred_classes = np.argmax(y_pred, axis=1)
+        
+        print("\nClassification Report:")
+        print(classification_report(y_test, y_pred_classes))
+        
+        # Save results
+        self.save_results(test_accuracy, test_loss)
+        
+        if self.config['save_plots']:
+            self.create_visualizations(y_test, y_pred_classes)
+        
+        if self.config['save_model']:
+            self.save_model()
+        
+        return test_accuracy, test_loss
+    
+    def create_visualizations(self, y_true, y_pred):
+        """Create and save training visualizations"""
+        print("Creating visualizations...")
+        
+        # Training history plots
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        
+        # Accuracy plot
+        axes[0, 0].plot(self.history.history['accuracy'], label='Training Accuracy')
+        axes[0, 0].plot(self.history.history['val_accuracy'], label='Validation Accuracy')
+        axes[0, 0].set_title('Model Accuracy')
+        axes[0, 0].set_xlabel('Epoch')
+        axes[0, 0].set_ylabel('Accuracy')
+        axes[0, 0].legend()
+        axes[0, 0].grid(True)
+        
+        # Loss plot
+        axes[0, 1].plot(self.history.history['loss'], label='Training Loss')
+        axes[0, 1].plot(self.history.history['val_loss'], label='Validation Loss')
+        axes[0, 1].set_title('Model Loss')
+        axes[0, 1].set_xlabel('Epoch')
+        axes[0, 1].set_ylabel('Loss')
+        axes[0, 1].legend()
+        axes[0, 1].grid(True)
+        
+        # Confusion matrix
+        cm = confusion_matrix(y_true, y_pred)
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[1, 0])
+        axes[1, 0].set_title('Confusion Matrix')
+        axes[1, 0].set_xlabel('Predicted Label')
+        axes[1, 0].set_ylabel('True Label')
+        
+        # Class distribution
+        unique, counts = np.unique(y_true, return_counts=True)
+        axes[1, 1].bar(unique, counts, alpha=0.7, label='True')
+        unique_pred, counts_pred = np.unique(y_pred, return_counts=True)
+        axes[1, 1].bar(unique_pred, counts_pred, alpha=0.7, label='Predicted')
+        axes[1, 1].set_title('Class Distribution')
+        axes[1, 1].set_xlabel('Class')
+        axes[1, 1].set_ylabel('Count')
+        axes[1, 1].legend()
+        
+        plt.tight_layout()
+        plt.savefig('/app/models/training_results.png', dpi=300, bbox_inches='tight')
+        print("Visualizations saved to /app/models/training_results.png")
+    
+    def save_model(self):
+        """Save the trained model"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        model_path = f"/app/models/{self.config['model_name']}_{timestamp}"
+        
+        # Save model
+        self.model.save(f"{model_path}.h5")
+        
+        # Save scaler
+        import joblib
+        joblib.dump(self.scaler, f"{model_path}_scaler.pkl")
+        
+        print(f"Model saved to {model_path}.h5")
+        print(f"Scaler saved to {model_path}_scaler.pkl")
+    
+    def save_results(self, accuracy, loss):
+        """Save training results"""
+        results = {
+            "timestamp": datetime.now().isoformat(),
+            "config": self.config,
+            "test_accuracy": float(accuracy),
+            "test_loss": float(loss),
+            "tensorflow_version": tf.__version__
+        }
+        
+        with open('/app/models/training_results.json', 'w') as f:
+            json.dump(results, f, indent=2)
+        
+        print("Results saved to /app/models/training_results.json")
+
+def main():
+    parser = argparse.ArgumentParser(description='Train AI model in Docker')
+    parser.add_argument('--config', type=str, help='Path to config file')
+    parser.add_argument('--epochs', type=int, default=50, help='Number of epochs')
+    parser.add_argument('--batch-size', type=int, default=32, help='Batch size')
+    
+    args = parser.parse_args()
+    
+    print("AI Model Training in Docker Container")
+    print("=" * 40)
+    print(f"TensorFlow Version: {tf.__version__}")
+    print(f"GPU Available: {tf.config.list_physical_devices('GPU')}")
+    print()
+    
+    # Initialize trainer
+    trainer = AIModelTrainer(args.config)
+    
+    # Override config with command line arguments
+    if args.epochs:
+        trainer.config['epochs'] = args.epochs
+    if args.batch_size:
+        trainer.config['batch_size'] = args.batch_size
+    
+    # Train model
+    try:
+        accuracy, loss = trainer.train()
+        print(f"\nTraining completed successfully!")
+        print(f"Final Test Accuracy: {accuracy:.4f}")
+        print(f"Final Test Loss: {loss:.4f}")
+        
+    except Exception as e:
+        print(f"Training failed with error: {str(e)}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+```
+
+Create a configuration file (`scripts/config.json`):
+
+```json
+{
+    "model_name": "docker_ai_classifier",
+    "epochs": 30,
+    "batch_size": 64,
+    "learning_rate": 0.001,
+    "validation_split": 0.2,
+    "random_state": 42,
+    "save_model": true,
+    "save_plots": true
+}
+```
+
+Create a requirements file (`requirements.txt`):
+
+```txt
+tensorflow==2.13.0
+numpy==1.24.3
+pandas==2.0.3
+matplotlib==3.7.2
+seaborn==0.12.2
+scikit-learn==1.3.0
+joblib==1.3.2
+```
+
+#### Subtask 3.3: Build and Test the AI Training Image
+
+```bash
+# Build the AI training image
+docker build -t ai-training:latest .
+
+# Create a volume for persistent storage
+docker volume create ai-models
+
+# Run the training container
+docker run --rm \
+    -v ai-models:/app/models \
+    ai-training:latest
+
+# Run with custom parameters
+docker run --rm \
+    -v ai-models:/app/models \
+    ai-training:latest python3 /app/scripts/train_model.py --epochs 20 --batch-size 64
+```
+
+---
+
+## 🎉 Summary
+
+This lab provides a comprehensive introduction to containerizing AI/ML workloads with Docker. You've learned to:
+
+- Set up Docker for ML development
+- Create specialized containers for different ML frameworks
+- Build optimized Docker images for AI training
+- Manage persistent storage for models and data
+- Run distributed ML workloads in containers
+
+The skills learned here will enable you to deploy reproducible, scalable AI/ML applications in any environment!
