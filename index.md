@@ -1,3 +1,6 @@
+```bash
+
+
 #!/bin/bash
 
 cd
@@ -428,4 +431,5 @@ echo "open localhost:5000"
 curl -s http://localhost:5000 | grep -o "Static Files Test"
 
 
+```
 
