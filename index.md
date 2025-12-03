@@ -1,74 +1,30 @@
 #!/bin/bash
 
-# 1. Initialize the Lab Environment
+cd
+ls
+mkdir flaskwork
+cd flaskwork
+pwd
 
-echo "Checking Docker installation..."
-docker --version
-if [ $? -ne 0 ]; then
-    echo "Docker is not installed. Please install Docker first."
-    exit 1
-fi
+python3 -m venv venv
+sleep 1
+. venv/bin/activate
+which python
 
-echo "Checking Docker Compose installation..."
-docker-compose --version
-if [ $? -ne 0 ]; then
-    echo "Docker Compose is not installed. Please install Docker Compose first."
-    exit 1
-fi
+pip install --upgrade pip
+pip install flask
+pip list | tail -5
 
-# 2. Set Up the Project Directory
-
-echo "Creating project directory..."
-mkdir -p web-db-stack && cd web-db-stack
-
-# 3. Create the docker-compose.yml File
-
-echo "Creating docker-compose.yml file..."
-cat << EOF > docker-compose.yml
-version: '3.8'
-
-services:
-  web:
-    image: nginx:latest
-    ports:
-      - "80:80"
-    depends_on:
-      - db
-
-  db:
-    image: mysql:5.7
-    environment:
-      MYSQL_ROOT_PASSWORD: examplepassword
-      MYSQL_DATABASE: exampledb
-    volumes:
-      - db_data:/var/lib/mysql
-
-volumes:
-  db_data:
+cat > app.py << 'EOF'
+from flask import Flask
+app = Flask(__name__)
+@app.route('/')
+def index():
+    return "Hello World"
 EOF
 
-# 4. Running Docker Compose
+export FLASK_APP=app.py
+echo $FLASK_APP
+ls -la
+echo "done"
 
-echo "Starting Docker Compose services..."
-docker-compose up -d
-
-# 5. Verify Services are Running
-
-echo "Verifying running containers..."
-docker-compose ps
-
-# 6. Test the Web Service
-
-echo "Access the web service by opening a browser and navigating to http://localhost."
-
-# 7. Accessing and Testing the Database Connection
-
-echo "Accessing the MySQL container..."
-docker-compose exec db mysql -u root -p"examplepassword" -e "SHOW DATABASES;"
-
-# 8. Stop and Clean Up Services
-
-echo "Stopping Docker Compose services..."
-docker-compose down
-
-echo "Lab completed successfully! Docker Compose services are stopped and cleaned up."
