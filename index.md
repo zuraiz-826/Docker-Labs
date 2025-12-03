@@ -1,6 +1,11 @@
+# Flask Labs – Bash Scripts Collection  
+Easily copy any script below.
+
+---
+
+## 1. Basic Flask App
+
 ```bash
-
-
 #!/bin/bash
 
 cd
@@ -30,13 +35,13 @@ export FLASK_APP=app.py
 echo $FLASK_APP
 ls -la
 echo "done"
+```
 
+---
 
+## 2. Flask Routes App
 
-
-
-
-
+```bash
 #!/bin/bash
 
 cd ~
@@ -69,10 +74,13 @@ sleep 2
 echo "check localhost:5000 and /about"
 ps aux | grep python
 sleep 1
+```
 
+---
 
+## 3. Route Parameters Lab
 
-
+```bash
 #!/bin/bash
 
 cd ~
@@ -104,9 +112,13 @@ sleep 2
 echo "try: curl localhost:5000/user/Alice"
 echo "or:  curl localhost:5000/user/Bob"
 sleep 1
+```
 
+---
 
+## 4. Flask Templates Basic
 
+```bash
 #!/bin/bash
 
 cd ~
@@ -145,9 +157,13 @@ python3 app.py &
 sleep 3
 echo "open browser to localhost:5000"
 ps aux | grep python | grep -v grep
+```
 
+---
 
+## 5. Template Inheritance Lab
 
+```bash
 #!/bin/bash
 
 cd ~
@@ -199,8 +215,13 @@ python3 app.py &
 sleep 2
 echo "check localhost:5000"
 curl -s http://localhost:5000 | grep -o "Child Content" || echo "running"
+```
 
+---
 
+## 6. Form Handling Lab
+
+```bash
 #!/bin/bash
 
 cd ~
@@ -239,8 +260,13 @@ python3 app.py &
 sleep 2
 echo "form at localhost:5000"
 curl -s http://localhost:5000 | grep -q "Submit Info" && echo "form up"
+```
 
+---
 
+## 7. Request Data Lab
+
+```bash
 #!/bin/bash
 
 cd ~
@@ -286,8 +312,13 @@ sleep 2
 echo "test: curl 'localhost:5000/query?param1=test'"
 echo "form at form.html"
 ps | grep python | grep -v grep
+```
 
+---
 
+## 8. url_for Redirect Lab
+
+```bash
 #!/bin/bash
 
 cd ~
@@ -320,9 +351,13 @@ python3 app.py &
 sleep 2
 echo "test: curl -L localhost:5000/go_home"
 curl -s http://localhost:5000/go_home 2>/dev/null | head -1
+```
 
+---
 
+## 9. Flash Messages Lab
 
+```bash
 #!/bin/bash
 
 cd ~
@@ -379,9 +414,13 @@ python3 app.py &
 sleep 3
 echo "open browser to localhost:5000"
 ps aux | grep python | grep -v grep | head -1
+```
 
+---
 
+## 10. Static Files Lab
 
+```bash
 #!/bin/bash
 
 cd ~
@@ -429,7 +468,5 @@ python3 app.py &
 sleep 2
 echo "open localhost:5000"
 curl -s http://localhost:5000 | grep -o "Static Files Test"
-
-
 ```
 
